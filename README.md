@@ -1,6 +1,6 @@
 # Chaturbate 录播工具
 ## 翻译自 https://github.com/teacat/chaturbate-dvr
-### 增加三个启动命令：--socks5Url=socks5地址例如：127.0.0.1：0:1070 --socks5Pwd=代理的密码 --socks5User=代理的密码
+### 增加三个启动命令：--socks5Url=socks5地址例如：127.0.0.1:1070 --socks5Pwd=代理的密码 --socks5User=代理的密码
 # 命令行选项
 
 可用选项：
