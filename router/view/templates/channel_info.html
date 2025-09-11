@@ -7,11 +7,11 @@
     </div>
     <div class="column">
         {{ if and .IsOnline (not .IsPaused) }}
-        <span class="ts-badge is-small is-start-spaced">RECORDING</span>
+        <span class="ts-badge is-small is-start-spaced">录制中</span>
         {{ else if and (not .IsOnline) (not .IsPaused) }}
-        <span class="ts-badge is-secondary is-small is-start-spaced">OFFLINE</span>
+        <span class="ts-badge is-secondary is-small is-start-spaced">离线</span>
         {{ else if .IsPaused }}
-        <span class="ts-badge is-negative is-small is-start-spaced">PAUSED</span>
+        <span class="ts-badge is-negative is-small is-start-spaced">暂停</span>
         {{ end }}
     </div>
 </div>
@@ -25,7 +25,7 @@
         <span class="ts-icon is-link-icon"></span>
     </div>
     <div class="column is-fluid">
-        <div class="ts-text is-small is-bold">Channel URL</div>
+        <div class="ts-text is-small is-bold">频道地址</div>
         <a class="ts-text is-small is-link is-external-link" href="{{ .GlobalConfig.Domain }}{{ .Username }}" target="_blank"> {{ .GlobalConfig.Domain }}{{ .Username }}</a>
     </div>
 </div>
@@ -37,7 +37,7 @@
         <span class="ts-icon is-folder-icon"></span>
     </div>
     <div class="column is-fluid">
-        <div class="ts-text is-small is-bold">Filename</div>
+        <div class="ts-text is-small is-bold">文件名</div>
         {{ if .Filename }}
         <div class="ts-text is-description">{{ .Filename }}</div>
         {{ else }}
@@ -53,7 +53,7 @@
         <span class="ts-icon is-tower-broadcast-icon"></span>
     </div>
     <div class="column is-fluid">
-        <div class="ts-text is-small is-bold">Last streamed at</div>
+        <div class="ts-text is-small is-bold">最后录制时间</div>
         <div class="ts-text is-description">{{ if .StreamedAt }}{{ .StreamedAt }} {{ if and .IsOnline (not .IsPaused) }}(NOW){{ end }}{{ else }} - {{ end }}</div>
     </div>
 </div>
@@ -65,7 +65,7 @@
         <span class="ts-icon is-clock-icon"></span>
     </div>
     <div class="column is-fluid">
-        <div class="ts-text is-small is-bold">Segment duration</div>
+        <div class="ts-text is-small is-bold">分片时长</div>
         <div class="ts-text is-description">{{ if .Duration }} {{ .Duration }} {{ if .MaxDuration }} / {{ .MaxDuration }} {{ end }} {{ else }} - {{ end }}</div>
     </div>
 </div>
@@ -77,7 +77,7 @@
         <span class="ts-icon is-chart-pie-icon"></span>
     </div>
     <div class="column is-fluid">
-        <div class="ts-text is-small is-bold">Segment filesize</div>
+        <div class="ts-text is-small is-bold">分片文件大小</div>
         <div class="ts-text is-description">{{ if .Filesize }} {{ .Filesize }} {{ if .MaxFilesize }} / {{ .MaxFilesize }} {{ end }} {{ else }} - {{ end }}</div>
     </div>
 </div>
@@ -90,14 +90,14 @@
         <form>
             <button class="ts-button is-start-icon is-fluid" hx-post="/resume_channel/{{ .Username }}" hx-swap="none">
                 <span class="ts-icon is-play-icon"></span>
-                Resume
+                继续录制
             </button>
         </form>
         {{ else }}
         <form>
             <button type="submit" class="ts-button is-start-icon is-secondary is-fluid" hx-post="/pause_channel/{{ .Username }}" hx-swap="none">
                 <span class="ts-icon is-pause-icon"></span>
-                Pause
+                暂停录制
             </button>
         </form>
         {{ end }}
@@ -106,7 +106,7 @@
         <form action="/stop_channel/{{ .Username }}" method="POST" onsubmit="return confirm('Are you sure you want to delete `{{ .Username }}` channel?')">
             <button class="ts-button is-start-icon is-outlined is-negative is-fluid" >
                 <span class="ts-icon is-trash-icon"></span>
-                Delete
+                删除
             </button>
         </form>
     </div>

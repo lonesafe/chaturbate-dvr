@@ -32,16 +32,16 @@ func NewClient() *Client {
 	}
 }
 
-// GetStream fetches the stream information for a given username.
+// GetStream 获取指定用户的流信息
 func (c *Client) GetStream(ctx context.Context, username string) (*Stream, error) {
 	return FetchStream(ctx, c.Req, username)
 }
 
-// FetchStream retrieves the streaming data from the given username's page.
+// FetchStream 从指定用户页面获取流数据.
 func FetchStream(ctx context.Context, client *internal.Req, username string) (*Stream, error) {
 	body, err := client.Get(ctx, fmt.Sprintf("%s%s", server.Config.Domain, username))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get page body: %w", err)
+		return nil, fmt.Errorf("获取页面正文失败: %w", err)
 	}
 
 	// Ensure that the playlist.m3u8 file is present in the response
@@ -52,7 +52,7 @@ func FetchStream(ctx context.Context, client *internal.Req, username string) (*S
 	return ParseStream(body)
 }
 
-// ParseStream extracts the HLS source URL from the given page body.
+// ParseStream 从给定页面正文中提取HLS源URL
 func ParseStream(body string) (*Stream, error) {
 	matches := roomDossierRegexp.FindStringSubmatch(body)
 	if len(matches) == 0 {
@@ -62,7 +62,7 @@ func ParseStream(body string) (*Stream, error) {
 	// Decode Unicode escape sequences in the extracted JSON string
 	sourceData, err := strconv.Unquote(strings.Replace(strconv.Quote(matches[1]), `\\u`, `\u`, -1))
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode unicode: %w", err)
+		return nil, fmt.Errorf("解码Unicode失败: %w", err)
 	}
 
 	// Unmarshal JSON to extract HLS source URL
@@ -70,31 +70,31 @@ func ParseStream(body string) (*Stream, error) {
 		HLSSource string `json:"hls_source"`
 	}
 	if err := json.Unmarshal([]byte(sourceData), &room); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+		return nil, fmt.Errorf("解析JSON失败: %w", err)
 	}
 
 	return &Stream{HLSSource: room.HLSSource}, nil
 }
 
-// Stream represents an HLS stream source.
+// Stream 表示HLS流源
 type Stream struct {
 	HLSSource string
 }
 
-// GetPlaylist retrieves the playlist corresponding to the given resolution and framerate.
+// GetPlaylist 获取与指定分辨率和帧率对应的播放列表
 func (s *Stream) GetPlaylist(ctx context.Context, resolution, framerate int) (*Playlist, error) {
 	return FetchPlaylist(ctx, s.HLSSource, resolution, framerate)
 }
 
-// FetchPlaylist fetches and decodes the HLS playlist file.
+// FetchPlaylist 获取并解码HLS播放列表文件
 func FetchPlaylist(ctx context.Context, hlsSource string, resolution, framerate int) (*Playlist, error) {
 	if hlsSource == "" {
-		return nil, errors.New("HLS source is empty")
+		return nil, errors.New("HLS 源为空")
 	}
 
 	resp, err := internal.NewReq().Get(ctx, hlsSource)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch HLS source: %w", err)
+		return nil, fmt.Errorf("获取HLS源失败: %w", err)
 	}
 
 	return ParsePlaylist(resp, hlsSource, resolution, framerate)
@@ -104,12 +104,12 @@ func FetchPlaylist(ctx context.Context, hlsSource string, resolution, framerate 
 func ParsePlaylist(resp, hlsSource string, resolution, framerate int) (*Playlist, error) {
 	p, _, err := m3u8.DecodeFrom(strings.NewReader(resp), true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode m3u8 playlist: %w", err)
+		return nil, fmt.Errorf("解码m3u8播放列表失败: %w", err)
 	}
 
 	masterPlaylist, ok := p.(*m3u8.MasterPlaylist)
 	if !ok {
-		return nil, errors.New("invalid master playlist format")
+		return nil, errors.New("无效的主播放列表格式")
 	}
 
 	return PickPlaylist(masterPlaylist, hlsSource, resolution, framerate)
@@ -141,7 +141,7 @@ func PickPlaylist(masterPlaylist *m3u8.MasterPlaylist, baseURL string, resolutio
 		}
 		width, err := strconv.Atoi(parts[1])
 		if err != nil {
-			return nil, fmt.Errorf("parse resolution: %w", err)
+			return nil, fmt.Errorf("解析分辨率: %w", err)
 		}
 		framerateVal := 30
 		if strings.Contains(v.Name, "FPS:60.0") {
@@ -166,7 +166,7 @@ func PickPlaylist(masterPlaylist *m3u8.MasterPlaylist, baseURL string, resolutio
 		})
 	}
 	if variant == nil {
-		return nil, fmt.Errorf("resolution not found")
+		return nil, fmt.Errorf("未找到分辨率")
 	}
 
 	var (
@@ -205,15 +205,15 @@ func (p *Playlist) WatchSegments(ctx context.Context, handler WatchHandler) erro
 		// Fetch the latest playlist
 		resp, err := client.Get(ctx, p.PlaylistURL)
 		if err != nil {
-			return fmt.Errorf("get playlist: %w", err)
+			return fmt.Errorf("获取播放列表: %w", err)
 		}
 		pl, _, err := m3u8.DecodeFrom(strings.NewReader(resp), true)
 		if err != nil {
-			return fmt.Errorf("decode from: %w", err)
+			return fmt.Errorf("解码自: %w", err)
 		}
 		playlist, ok := pl.(*m3u8.MediaPlaylist)
 		if !ok {
-			return fmt.Errorf("cast to media playlist")
+			return fmt.Errorf("转换为媒体播放列表")
 		}
 
 		// Process new segments

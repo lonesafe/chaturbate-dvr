@@ -22,5 +22,8 @@ func New(c *cli.Context) (*entity.Config, error) {
 		Cookies:       c.String("cookies"),
 		UserAgent:     c.String("user-agent"),
 		Domain:        c.String("domain"),
+		Socks5User:    c.String("socks5User"),
+		Socks5Pwd:     c.String("socks5Pwd"),
+		Socks5Url:     c.String("socks5Url"),
 	}, nil
 }

@@ -31,74 +31,89 @@ func main() {
 	app := &cli.App{
 		Name:    "chaturbate-dvr",
 		Version: "2.0.3",
-		Usage:   "Record your favorite Chaturbate streams automatically. 😎🫵",
+		Usage:   "自动录制您最喜爱的Chaturbate直播。 😎🫵",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "username",
 				Aliases: []string{"u"},
-				Usage:   "The username of the channel to record",
+				Usage:   "要录制的频道的用户名",
 				Value:   "",
 			},
 			&cli.StringFlag{
 				Name:  "admin-username",
-				Usage: "Username for web authentication (optional)",
+				Usage: "web身份验证的用户名（可选）",
 				Value: "",
 			},
 			&cli.StringFlag{
 				Name:  "admin-password",
-				Usage: "Password for web authentication (optional)",
+				Usage: "web身份验证密码（可选）",
 				Value: "",
 			},
 			&cli.IntFlag{
 				Name:  "framerate",
-				Usage: "Desired framerate (FPS)",
-				Value: 30,
+				Usage: "期望帧率（FPS）",
+				Value: 60,
 			},
 			&cli.IntFlag{
 				Name:  "resolution",
-				Usage: "Desired resolution (e.g., 1080 for 1080p)",
-				Value: 1080,
+				Usage: "期望录制的分辨路 (例如： 1080 对应 1080p)",
+				Value: 2160,
 			},
 			&cli.StringFlag{
 				Name:  "pattern",
-				Usage: "Template for naming recorded videos",
-				Value: "videos/{{.Username}}_{{.Year}}-{{.Month}}-{{.Day}}_{{.Hour}}-{{.Minute}}-{{.Second}}{{if .Sequence}}_{{.Sequence}}{{end}}",
+				Usage: "视频文件存储方式",
+				Value: "videos/{{.Username}}/{{.Year}}-{{.Month}}-{{.Day}}_{{.Hour}}-{{.Minute}}-{{.Second}}{{if .Sequence}}_{{.Sequence}}{{end}}",
 			},
 			&cli.IntFlag{
 				Name:  "max-duration",
-				Usage: "Split video into segments every N minutes ('0' to disable)",
+				Usage: "每N分钟将视频分割成片段 ('0' 为关闭)",
 				Value: 0,
 			},
 			&cli.IntFlag{
 				Name:  "max-filesize",
-				Usage: "Split video into segments every N MB ('0' to disable)",
+				Usage: "每N MB将视频分割成片段 ('0' 为关闭)",
 				Value: 0,
 			},
 			&cli.StringFlag{
 				Name:    "port",
 				Aliases: []string{"p"},
-				Usage:   "Port for the web interface and API",
+				Usage:   "web界面和API的端口",
 				Value:   "8080",
 			},
 			&cli.IntFlag{
 				Name:  "interval",
-				Usage: "Check if the channel is online every N minutes",
+				Usage: "每N分钟检查一次频道是否在线",
 				Value: 1,
 			},
 			&cli.StringFlag{
 				Name:  "cookies",
-				Usage: "Cookies to use in the request (format: key=value; key2=value2)",
+				Usage: "请求中使用的Cookie (格式: key=value; key2=value2)",
 				Value: "",
 			},
 			&cli.StringFlag{
 				Name:  "user-agent",
-				Usage: "Custom User-Agent for the request",
+				Usage: "请求中使用的 User-Agent",
 				Value: "",
 			},
 			&cli.StringFlag{
 				Name:  "domain",
-				Usage: "Chaturbate domain to use",
+				Usage: "Chaturbate 的地址",
 				Value: "https://chaturbate.com/",
+			},
+			&cli.StringFlag{
+				Name:  "socks5User",
+				Usage: "socks5用户名（如果有）",
+				Value: "",
+			},
+			&cli.StringFlag{
+				Name:  "socks5Pwd",
+				Usage: "socks5密码（如果有）",
+				Value: "",
+			},
+			&cli.StringFlag{
+				Name:  "socks5Url",
+				Usage: "socks5地址（非必填，例：127.0.0.1:1070）",
+				Value: "",
 			},
 		},
 		Action: start,
@@ -123,10 +138,10 @@ func start(c *cli.Context) error {
 
 	// init web interface if username is not provided
 	if server.Config.Username == "" {
-		fmt.Printf("👋 Visit http://localhost:%s to use the Web UI\n\n\n", c.String("port"))
+		fmt.Printf("👋 访问 http://localhost:%s 使用web控制台\n\n\n", c.String("port"))
 
 		if err := server.Manager.LoadConfig(); err != nil {
-			return fmt.Errorf("load config: %w", err)
+			return fmt.Errorf("加载配置: %w", err)
 		}
 
 		return router.SetupRouter().Run(":" + c.String("port"))
@@ -142,7 +157,7 @@ func start(c *cli.Context) error {
 		MaxDuration: c.Int("max-duration"),
 		MaxFilesize: c.Int("max-filesize"),
 	}, false); err != nil {
-		return fmt.Errorf("create channel: %w", err)
+		return fmt.Errorf("创建频道: %w", err)
 	}
 
 	// block forever

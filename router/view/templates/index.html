@@ -29,20 +29,20 @@
                             <span id="recording-counter" class="ts-text is-description is-bold"></span>
                         </div>
                         <div class="item">
-                            <span class="ts-text is-description is-bold">VERSION {{ .Config.Version }}</span>
+                            <span class="ts-text is-description is-bold">版本 {{ .Config.Version }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="column">
                     <button class="ts-button is-start-icon is-outlined" data-dialog="settings-dialog">
                         <span class="ts-icon is-gear-icon"></span>
-                        Settings
+                        设置
                     </button>
                 </div>
                 <div class="column">
                     <button class="ts-button is-start-icon" data-dialog="create-dialog">
                         <span class="ts-icon is-plus-icon"></span>
-                        Add Channel
+                        添加频道
                     </button>
                 </div>
             </div>
@@ -53,12 +53,12 @@
             <div class="ts-divider has-vertically-spaced-large"></div>
             <div class="ts-blankslate">
                 <span class="ts-icon is-eye-low-vision-icon"></span>
-                <div class="header">No channels are currently recording</div>
-                <div class="description">Add a new Chaturbate channel to start recording.</div>
+                <div class="header">当前无频道正在录制</div>
+                <div class="description">添加新的Chaturbate频道以开始录制</div>
                 <div class="action">
                     <button class="ts-button is-start-icon" data-dialog="create-dialog">
                         <span class="ts-icon is-plus-icon"></span>
-                        Add Channel
+                        添加频道
                     </button>
                 </div>
             </div>
@@ -83,7 +83,7 @@
                         <div>
                             <label class="ts-switch is-small" style="display: flex">
                                 <input type="checkbox" checked />
-                                Auto-Update & Scroll Logs
+                                自动更新与滚动日志
                             </label>
                         </div>
                     </div>
@@ -121,7 +121,7 @@
                                 <div class="ts-input">
                                     <textarea name="cookies" rows="5">{{ .Config.Cookies }}</textarea>
                                 </div>
-                                <div class="ts-text is-description has-top-spaced-small">Use semicolons to separate multiple cookies, e.g., "key1=value1; key2=value2". See <a class="ts-text is-link" href="https://github.com/teacat/chaturbate-dvr/?tab=readme-ov-file#-cookies--user-agent" target="_blank">README</a> for details.</div>
+                                <div class="ts-text is-description has-top-spaced-small">使用分号分隔多个Cookie，例如："key1=value1; key2=value2"。详见 <a class="ts-text is-link" href="https://github.com/teacat/chaturbate-dvr/?tab=readme-ov-file#-cookies--user-agent" target="_blank">README</a> </div>
                             </div>
                         </div>
                         <!-- / Cookies -->
@@ -133,7 +133,7 @@
                                 <div class="ts-input">
                                     <textarea name="user_agent" rows="5">{{ .Config.UserAgent }}</textarea>
                                 </div>
-                                <div class="ts-text is-description has-top-spaced-small">User-Agent can be found using tools like <a class="ts-text is-link" href="https://www.whatismybrowser.com/detect/what-is-my-user-agent/" target="_blank">WhatIsMyBrowser</a>.</div>
+                                <div class="ts-text is-description has-top-spaced-small">User-Agent可通过以下工具查找： <a class="ts-text is-link" href="https://www.whatismybrowser.com/detect/what-is-my-user-agent/" target="_blank">WhatIsMyBrowser</a>.</div>
                             </div>
                         </div>
                         <!-- / User Agent -->
@@ -146,14 +146,14 @@
                             <div class="column is-fluid">
                                 <div class="ts-text is-description">
                                     <span class="ts-icon is-triangle-exclamation-icon is-end-spaced"></span>
-                                    Changes will be reverted after the program restarts
+                                    程序重启后更改将被还原
                                 </div>
                             </div>
                             <div class="column">
-                                <button type="reset" class="ts-button is-outlined is-secondary" data-dialog="settings-dialog">Cancel</button>
+                                <button type="reset" class="ts-button is-outlined is-secondary" data-dialog="settings-dialog">取消</button>
                             </div>
                             <div class="column">
-                                <button type="submit" class="ts-button is-primary">Apply</button>
+                                <button type="submit" class="ts-button is-primary">应用</button>
                             </div>
                         </div>
                     </div>
@@ -182,20 +182,20 @@
                     <div class="ts-content is-vertically-padded">
                         <!-- Channel Username -->
                         <div class="ts-control is-wide">
-                            <div class="label">Channel Username</div>
+                            <div class="label">频道</div>
                             <div class="content">
                                 <div class="ts-input is-start-labeled">
                                     <div class="label">{{ .Config.Domain }}</div>
                                     <input type="text" name="username" autofocus required />
                                 </div>
-                                <div class="ts-text is-description has-top-spaced-small">Use commas to separate multiple channel names, e.g. "channel1, channel2, channel3".</div>
+                                <div class="ts-text is-description has-top-spaced-small">使用逗号分隔多个频道名称，例如："channel1, channel2, channel3"。</div>
                             </div>
                         </div>
                         <!-- / Channel Username -->
 
                         <!-- Resolution -->
                         <div class="ts-control is-wide has-top-spaced-large">
-                            <div class="label">Resolution</div>
+                            <div class="label">分辨率</div>
                             <div class="content">
                                 <div class="ts-select">
                                     <select name="resolution">
@@ -208,19 +208,19 @@
                                         <option value="240" {{ if eq .Config.Resolution 240 }}selected{{ end }}>240p</option>
                                     </select>
                                 </div>
-                                <div class="ts-text is-description has-top-spaced-small">The lower resolution will be used if the selected resolution is not available.</div>
+                                <div class="ts-text is-description has-top-spaced-small">若所选分辨率不可用，将使用较低分辨率。</div>
                             </div>
                         </div>
                         <!-- / Resolution -->
 
                         <!-- Framerate -->
                         <div class="ts-control is-wide has-top-spaced-large">
-                            <div class="label">Framerate</div>
+                            <div class="label">帧率</div>
                             <div class="content is-padded">
                                 <div class="ts-wrap is-compact is-vertical">
                                     <label class="ts-radio">
                                         <input type="radio" name="framerate" value="60" {{ if eq .Config.Framerate 60 }}checked{{ end }} />
-                                        60 FPS (or lower)
+                                        60 FPS (或更低)
                                     </label>
                                     <label class="ts-radio">
                                         <input type="radio" name="framerate" value="30" {{ if eq .Config.Framerate 30 }}checked{{ end }} />
@@ -233,13 +233,13 @@
 
                         <!-- Filename Pattern -->
                         <div class="ts-control is-wide has-top-spaced-large">
-                            <div class="label">Filename Pattern</div>
+                            <div class="label">文件存储位置</div>
                             <div class="content">
                                 <div class="ts-input">
                                     <input type="text" name="pattern" value="{{ .Config.Pattern }}" />
                                 </div>
                                 <div class="ts-text is-description has-top-spaced-small">
-                                    See the <a class="ts-text is-external-link is-link" href="https://github.com/teacat/chaturbate-dvr" target="_blank">README</a> for details.
+                                    详情请查看： <a class="ts-text is-external-link is-link" href="https://github.com/teacat/chaturbate-dvr" target="_blank">README</a>
                                 </div>
                             </div>
                         </div>
@@ -249,26 +249,26 @@
 
                         <!-- Splitting Options -->
                         <div class="ts-control is-wide has-top-spaced">
-                            <div class="label">Splitting Options</div>
+                            <div class="label">分段选项</div>
                             <div class="content">
                                 <div class="ts-content is-padded is-secondary">
                                     <div class="ts-grid is-relaxed is-2-columns">
                                         <div class="column">
-                                            <div class="ts-text is-bold">Max Filesize</div>
+                                            <div class="ts-text is-bold">每个文件最大文件大小</div>
                                             <div class="ts-input is-end-labeled has-top-spaced-small">
                                                 <input type="number" name="max_filesize" value="{{ .Config.MaxFilesize }}" />
                                                 <span class="label">MB</span>
                                             </div>
                                         </div>
                                         <div class="column">
-                                            <div class="ts-text is-bold">Max Duration</div>
+                                            <div class="ts-text is-bold">每个文件最大时长</div>
                                             <div class="ts-input is-end-labeled has-top-spaced-small">
                                                 <input type="number" name="max_duration" value="{{ .Config.MaxDuration }}" />
                                                 <span class="label">Min(s)</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="ts-text is-description has-top-spaced">Splitting will be disabled if both options are 0.</div>
+                                    <div class="ts-text is-description has-top-spaced">若两项选项均为0，则分段功能将被禁用。</div>
                                 </div>
                             </div>
                         </div>
@@ -279,8 +279,8 @@
 
                     <div class="ts-content is-secondary is-horizontally-padded">
                         <div class="ts-wrap is-end-aligned">
-                            <button type="reset" class="ts-button is-outlined is-secondary" data-dialog="create-dialog">Cancel</button>
-                            <button type="submit" class="ts-button is-primary">Add Channel</button>
+                            <button type="reset" class="ts-button is-outlined is-secondary" data-dialog="create-dialog">取消</button>
+                            <button type="submit" class="ts-button is-primary">添加</button>
                         </div>
                     </div>
                 </form>
@@ -294,16 +294,16 @@
                 // Count badges that contain "RECORDING" text (not secondary or negative)
                 let count = 0;
                 document.querySelectorAll('.ts-badge').forEach(badge => {
-                    if (badge.textContent.trim() === 'RECORDING') {
+                    if (badge.textContent.trim() === '录制中') {
                         count++;
                     }
                 });
 
                 const counter_el = document.getElementById('recording-counter');
                  if (count > 0) {
-                    counter_el.textContent = `${count} ${count === 1 ? 'CHANNEL IS' : 'CHANNELS ARE'} RECORDING`;
+                    counter_el.textContent = `${count} 个频道正在录制`;
                 } else {
-                    counter_el.textContent = `NO RECORDING`;
+                    counter_el.textContent = `无录制任务`;
                 }
             }
 

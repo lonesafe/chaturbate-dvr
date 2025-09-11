@@ -54,20 +54,20 @@ func (ch *Channel) Cleanup() error {
 
 	// Sync the file to ensure data is written to disk
 	if err := ch.File.Sync(); err != nil && !errors.Is(err, os.ErrClosed) {
-		return fmt.Errorf("sync file: %w", err)
+		return fmt.Errorf("同步文件: %w", err)
 	}
 	if err := ch.File.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
-		return fmt.Errorf("close file: %w", err)
+		return fmt.Errorf("关闭文件: %w", err)
 	}
 
 	// Delete the empty file
 	fileInfo, err := os.Stat(filename)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("stat file delete zero file: %w", err)
+		return fmt.Errorf("开始删除零字节文件: %w", err)
 	}
 	if fileInfo != nil && fileInfo.Size() == 0 {
 		if err := os.Remove(filename); err != nil {
-			return fmt.Errorf("remove zero file: %w", err)
+			return fmt.Errorf("删除零字节文件: %w", err)
 		}
 	}
 	return nil
@@ -80,7 +80,7 @@ func (ch *Channel) GenerateFilename() (string, error) {
 	// Parse the filename pattern defined in the channel's config
 	tpl, err := template.New("filename").Parse(ch.Config.Pattern)
 	if err != nil {
-		return "", fmt.Errorf("filename pattern error: %w", err)
+		return "", fmt.Errorf("文件名模式错误: %w", err)
 	}
 
 	// Get the current time based on the Unix timestamp when the stream was started
@@ -113,7 +113,7 @@ func (ch *Channel) CreateNewFile(filename string) error {
 	// Open the file in append mode, create it if it doesn't exist
 	file, err := os.OpenFile(filename+".ts", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
 	if err != nil {
-		return fmt.Errorf("cannot open file: %s: %w", filename, err)
+		return fmt.Errorf("无法打开文件: %s: %w", filename, err)
 	}
 
 	ch.File = file

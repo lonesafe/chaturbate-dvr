@@ -63,4 +63,7 @@ type Config struct {
 	Cookies       string
 	UserAgent     string
 	Domain        string
+	Socks5User    string
+	Socks5Pwd     string
+	Socks5Url     string
 }

@@ -117,7 +117,7 @@ func (ch *Channel) Pause() {
 
 	ch.Config.IsPaused = true
 	ch.Update()
-	ch.Info("channel paused")
+	ch.Info("暂停该频道录制")
 }
 
 // Stop stops the channel and cancels the context.
@@ -125,7 +125,7 @@ func (ch *Channel) Stop() {
 	// Stop the monitoring loop
 	ch.CancelFunc()
 
-	ch.Info("channel stopped")
+	ch.Info("停止该频道录制")
 }
 
 // Resume resumes the channel monitoring.
@@ -136,7 +136,7 @@ func (ch *Channel) Resume(startSeq int) {
 	ch.Config.IsPaused = false
 
 	ch.Update()
-	ch.Info("channel resumed")
+	ch.Info("恢复该频道录像")
 
 	<-time.After(time.Duration(startSeq) * time.Second)
 	go ch.Monitor()

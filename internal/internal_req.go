@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/teacat/chaturbate-dvr/server"
+	"golang.org/x/net/proxy"
 )
 
 // Req represents an HTTP client with customized settings.
@@ -28,15 +29,27 @@ func NewReq() *Req {
 
 // CreateTransport initializes a custom HTTP transport.
 func CreateTransport() *http.Transport {
-	// The DefaultTransport allows user changes the proxy settings via environment variables
-	// such as HTTP_PROXY, HTTPS_PROXY.
-	defaultTransport := http.DefaultTransport.(*http.Transport)
-
-	newTransport := defaultTransport.Clone()
-	newTransport.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: true,
+	// 创建SOCKS5拨号器
+	var auth *proxy.Auth
+	auth = &proxy.Auth{
+		User:     server.Config.Socks5User,
+		Password: server.Config.Socks5Pwd,
 	}
-	return newTransport
+
+	dialer, err := proxy.SOCKS5("tcp", server.Config.Socks5Url, auth, proxy.Direct)
+	if err != nil {
+		fmt.Errorf("SOCKS5代理错误: %v", err)
+		return nil
+	}
+
+	transport := &http.Transport{
+		Dial: dialer.Dial,
+	}
+
+	// 跳过SSL验证
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	return transport
 }
 
 // Get sends an HTTP GET request and returns the response as a string.
