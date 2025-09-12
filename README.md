@@ -25,4 +25,4 @@
 --socks5Pwd                     代理的密码
 --socks5User                    代理的密码
 ```
-![Total visitor](https://visitor-count-badge.herokuapp.com/total.svg?repo_id=lonesafe-chaturbate-dvr)
+![marionxue's github stats](https://github-readme-stats.vercel.app/api?username=marionxue&theme=radical) 
