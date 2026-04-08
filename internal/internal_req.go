@@ -29,25 +29,27 @@ func NewReq() *Req {
 
 // CreateTransport initializes a custom HTTP transport.
 func CreateTransport() *http.Transport {
-	// 创建SOCKS5拨号器
-	var auth *proxy.Auth
-	auth = &proxy.Auth{
-		User:     server.Config.Socks5User,
-		Password: server.Config.Socks5Pwd,
-	}
-
-	dialer, err := proxy.SOCKS5("tcp", server.Config.Socks5Url, auth, proxy.Direct)
-	if err != nil {
-		fmt.Errorf("SOCKS5代理错误: %v", err)
-		return nil
-	}
-
 	transport := &http.Transport{
-		Dial: dialer.Dial,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	// 跳过SSL验证
-	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	// 判断是否设置了代理
+	if server.Config.Socks5Url != "" {
+		// 创建 SOCKS5 拨号器
+		var auth *proxy.Auth
+		auth = &proxy.Auth{
+			User:     server.Config.Socks5User,
+			Password: server.Config.Socks5Pwd,
+		}
+
+		dialer, err := proxy.SOCKS5("tcp", server.Config.Socks5Url, auth, proxy.Direct)
+		if err != nil {
+			fmt.Errorf("SOCKS5 代理错误：%v", err)
+			return transport // 返回默认配置
+		}
+
+		transport.Dial = dialer.Dial
+	}
 
 	return transport
 }

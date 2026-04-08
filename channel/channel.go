@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
+	"os/exec"
 	"time"
 
 	"github.com/teacat/chaturbate-dvr/entity"
@@ -26,8 +26,9 @@ type Channel struct {
 
 	Logs []string
 
-	File   *os.File
-	Config *entity.ChannelConfig
+	File      string
+	FfmpegCmd *exec.Cmd
+	Config    *entity.ChannelConfig
 }
 
 // New creates a new channel instance with the given manager and configuration.
@@ -86,8 +87,8 @@ func (ch *Channel) Error(format string, a ...any) {
 // ExportInfo exports the channel information as a ChannelInfo struct.
 func (ch *Channel) ExportInfo() *entity.ChannelInfo {
 	var filename string
-	if ch.File != nil {
-		filename = ch.File.Name()
+	if ch.File != "" {
+		filename = ch.File
 	}
 	var streamedAt string
 	if ch.StreamedAt != 0 {
@@ -111,9 +112,18 @@ func (ch *Channel) ExportInfo() *entity.ChannelInfo {
 
 // Pause pauses the channel and cancels the context.
 func (ch *Channel) Pause() {
-	// Stop the monitoring loop, this also updates `ch.IsOnline` to false
-	// `context.Canceled` → `ch.Monitor()` → `onRetry` → `ch.UpdateOnlineStatus(false)`.
+	// 首先取消上下文，停止录制循环
 	ch.CancelFunc()
+
+	// 停止 ffmpeg 进程
+	if err := ch.StopFfmpeg(); err != nil {
+		ch.Error("停止 ffmpeg 失败：%s", err.Error())
+	}
+
+	// 清理文件资源，关闭文件句柄
+	if err := ch.Cleanup(); err != nil {
+		ch.Error("清理文件失败：%s", err.Error())
+	}
 
 	ch.Config.IsPaused = true
 	ch.Update()
@@ -124,6 +134,16 @@ func (ch *Channel) Pause() {
 func (ch *Channel) Stop() {
 	// Stop the monitoring loop
 	ch.CancelFunc()
+
+	// 停止 ffmpeg 进程
+	if err := ch.StopFfmpeg(); err != nil {
+		ch.Error("停止 ffmpeg 失败：%s", err.Error())
+	}
+
+	// 清理文件资源
+	if err := ch.Cleanup(); err != nil {
+		ch.Error("清理文件失败：%s", err.Error())
+	}
 
 	ch.Info("停止该频道录制")
 }

@@ -1,12 +1,22 @@
-FROM golang:1.23-alpine AS builder
-WORKDIR /workspace
+# 使用官方的Ubuntu基础镜像
+FROM ubuntu:latest
 
-COPY ./ ./
-RUN go build -o chaturbate-dvr .
+# 创建应用程序目录
+RUN mkdir -p /opt/videos
 
-FROM scratch AS runnable
-WORKDIR /usr/src/app
+# 将本地二进制文件复制到容器中
+COPY x64_linux_chaturbate-dvr /opt/
 
-COPY --from=builder /workspace/chaturbate-dvr /chaturbate-dvr
+# 设置执行权限
+RUN chmod +x /opt/x64_linux_chaturbate-dvr
 
-ENTRYPOINT ["/chaturbate-dvr"]
+RUN apt update
+RUN apt install -y ffmpeg
+# 暴露应用程序使用的端口
+EXPOSE 8080
+
+# 设置工作目录
+WORKDIR /opt
+
+# 设置容器启动命令
+CMD ["/opt/x64_linux_chaturbate-dvr", "--domain", "https://zh-hans.chaturbate.com/"]

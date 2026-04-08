@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -39,14 +40,9 @@ func (c *Client) GetStream(ctx context.Context, username string) (*Stream, error
 
 // FetchStream 从指定用户页面获取流数据.
 func FetchStream(ctx context.Context, client *internal.Req, username string) (*Stream, error) {
-	body, err := client.Get(ctx, fmt.Sprintf("%s%s", server.Config.Domain, username))
+	body, err := client.Get(ctx, fmt.Sprintf("%s//api/chatvideocontext/%s", server.Config.Domain, username))
 	if err != nil {
 		return nil, fmt.Errorf("获取页面正文失败: %w", err)
-	}
-
-	// Ensure that the playlist.m3u8 file is present in the response
-	if !strings.Contains(body, "playlist.m3u8") {
-		return nil, internal.ErrChannelOffline
 	}
 
 	return ParseStream(body)
@@ -54,29 +50,29 @@ func FetchStream(ctx context.Context, client *internal.Req, username string) (*S
 
 // ParseStream 从给定页面正文中提取HLS源URL
 func ParseStream(body string) (*Stream, error) {
-	matches := roomDossierRegexp.FindStringSubmatch(body)
-	if len(matches) == 0 {
-		return nil, errors.New("room dossier not found")
+	// 解析 JSON 响应
+	var roomData struct {
+		RoomStatus string `json:"room_status"`
+		HLSSource  string `json:"hls_source"`
+	}
+	if err := json.Unmarshal([]byte(body), &roomData); err != nil {
+		return nil, fmt.Errorf("解析 JSON 失败：%w", err)
 	}
 
-	// Decode Unicode escape sequences in the extracted JSON string
-	sourceData, err := strconv.Unquote(strings.Replace(strconv.Quote(matches[1]), `\\u`, `\u`, -1))
-	if err != nil {
-		return nil, fmt.Errorf("解码Unicode失败: %w", err)
+	// 检查房间状态
+	if roomData.RoomStatus != "public" {
+		return nil, internal.ErrChannelOffline
 	}
 
-	// Unmarshal JSON to extract HLS source URL
-	var room struct {
-		HLSSource string `json:"hls_source"`
-	}
-	if err := json.Unmarshal([]byte(sourceData), &room); err != nil {
-		return nil, fmt.Errorf("解析JSON失败: %w", err)
+	// 检查 HLS 源是否存在
+	if roomData.HLSSource == "" {
+		return nil, internal.ErrChannelOffline
 	}
 
-	return &Stream{HLSSource: room.HLSSource}, nil
+	return &Stream{HLSSource: roomData.HLSSource}, nil
 }
 
-// Stream 表示HLS流源
+// Stream 代表 HLS 流源
 type Stream struct {
 	HLSSource string
 }
@@ -86,7 +82,7 @@ func (s *Stream) GetPlaylist(ctx context.Context, resolution, framerate int) (*P
 	return FetchPlaylist(ctx, s.HLSSource, resolution, framerate)
 }
 
-// FetchPlaylist 获取并解码HLS播放列表文件
+// FetchPlaylist 获取并解码 HLS 播放列表文件
 func FetchPlaylist(ctx context.Context, hlsSource string, resolution, framerate int) (*Playlist, error) {
 	if hlsSource == "" {
 		return nil, errors.New("HLS 源为空")
@@ -94,7 +90,7 @@ func FetchPlaylist(ctx context.Context, hlsSource string, resolution, framerate 
 
 	resp, err := internal.NewReq().Get(ctx, hlsSource)
 	if err != nil {
-		return nil, fmt.Errorf("获取HLS源失败: %w", err)
+		return nil, fmt.Errorf("获取 HLS 源失败：%w", err)
 	}
 
 	return ParsePlaylist(resp, hlsSource, resolution, framerate)
@@ -141,7 +137,7 @@ func PickPlaylist(masterPlaylist *m3u8.MasterPlaylist, baseURL string, resolutio
 		}
 		width, err := strconv.Atoi(parts[1])
 		if err != nil {
-			return nil, fmt.Errorf("解析分辨率: %w", err)
+			return nil, fmt.Errorf("解析分辨率：%w", err)
 		}
 		framerateVal := 30
 		if strings.Contains(v.Name, "FPS:60.0") {
@@ -183,12 +179,44 @@ func PickPlaylist(masterPlaylist *m3u8.MasterPlaylist, baseURL string, resolutio
 		}
 	}
 
+	// 使用 url.Parse 和 ResolveReference 正确处理 M3U8 URL 拼接
+	baseURLParsed, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("解析基础 URL 失败：%w", err)
+	}
+
+	playlistURLParsed, err := url.Parse(playlistURL)
+	if err != nil {
+		return nil, fmt.Errorf("解析播放列表 URL 失败：%w", err)
+	}
+
+	// ResolveReference 会自动处理相对路径和绝对路径
+	fullPlaylistURL := baseURLParsed.ResolveReference(playlistURLParsed).String()
+
+	// 获取根目录 URL（移除文件名部分）
+	rootURL := baseURL[:strings.LastIndexByte(baseURL, '/')+1]
+
 	return &Playlist{
-		PlaylistURL: strings.TrimSuffix(baseURL, "playlist.m3u8") + playlistURL,
-		RootURL:     strings.TrimSuffix(baseURL, "playlist.m3u8"),
+		PlaylistURL: fullPlaylistURL,
+		RootURL:     rootURL,
 		Resolution:  finalResolution,
 		Framerate:   finalFramerate,
 	}, nil
+}
+
+// buildSegmentURL 构建视频分片的完整 URL
+func buildSegmentURL(rootURL, segmentURI string) (string, error) {
+	rootURLParsed, err := url.Parse(rootURL)
+	if err != nil {
+		return "", fmt.Errorf("解析根 URL 失败：%w", err)
+	}
+
+	segmentURLParsed, err := url.Parse(segmentURI)
+	if err != nil {
+		return "", fmt.Errorf("解析分片 URI 失败：%w", err)
+	}
+
+	return rootURLParsed.ResolveReference(segmentURLParsed).String(), nil
 }
 
 // WatchHandler is a function type that processes video segments.
@@ -196,40 +224,41 @@ type WatchHandler func(b []byte, duration float64) error
 
 // WatchSegments continuously fetches and processes video segments.
 func (p *Playlist) WatchSegments(ctx context.Context, handler WatchHandler) error {
-	var (
-		client  = internal.NewReq()
-		lastSeq = -1
-	)
+	client := internal.NewReq()
+	processedURIs := make(map[string]bool)
 
 	for {
-		// Fetch the latest playlist
 		resp, err := client.Get(ctx, p.PlaylistURL)
 		if err != nil {
-			return fmt.Errorf("获取播放列表: %w", err)
+			return fmt.Errorf("获取播放列表：%w", err)
 		}
 		pl, _, err := m3u8.DecodeFrom(strings.NewReader(resp), true)
 		if err != nil {
-			return fmt.Errorf("解码自: %w", err)
+			return fmt.Errorf("解码 M3U8: %w", err)
 		}
 		playlist, ok := pl.(*m3u8.MediaPlaylist)
 		if !ok {
-			return fmt.Errorf("转换为媒体播放列表")
+			return errors.New("无效的媒体播放列表格式")
 		}
 
-		// Process new segments
+		var newSegments []*m3u8.MediaSegment
 		for _, v := range playlist.Segments {
 			if v == nil {
 				continue
 			}
-			seq := internal.SegmentSeq(v.URI)
-			if seq == -1 || seq <= lastSeq {
-				continue
+			if !processedURIs[v.URI] {
+				newSegments = append(newSegments, v)
+				processedURIs[v.URI] = true
 			}
-			lastSeq = seq
+		}
 
-			// Fetch segment data with retry mechanism
+		for _, segment := range newSegments {
 			pipeline := func() ([]byte, error) {
-				return client.GetBytes(ctx, fmt.Sprintf("%s%s", p.RootURL, v.URI))
+				fullURL, err := buildSegmentURL(p.RootURL, segment.URI)
+				if err != nil {
+					return nil, err
+				}
+				return client.GetBytes(ctx, fullURL)
 			}
 
 			resp, err := retry.DoWithData(
@@ -243,12 +272,41 @@ func (p *Playlist) WatchSegments(ctx context.Context, handler WatchHandler) erro
 				break
 			}
 
-			// Process the segment using the provided handler
-			if err := handler(resp, v.Duration); err != nil {
-				return fmt.Errorf("handler: %w", err)
+			if err := handler(resp, segment.Duration); err != nil {
+				return fmt.Errorf("处理分片失败：%w", err)
 			}
 		}
 
-		<-time.After(1 * time.Second) // time.Duration(playlist.TargetDuration)
+		time.Sleep(1 * time.Second)
 	}
+}
+
+// GetInitSegment 获取 init segment（如果存在）
+func (p *Playlist) GetInitSegment(ctx context.Context) ([]byte, error) {
+	resp, err := internal.NewReq().Get(ctx, p.PlaylistURL)
+	if err != nil {
+		return nil, fmt.Errorf("获取播放列表失败：%w", err)
+	}
+
+	pl, _, err := m3u8.DecodeFrom(strings.NewReader(resp), true)
+	if err != nil {
+		return nil, fmt.Errorf("解码 M3U8 失败：%w", err)
+	}
+
+	mediaPlaylist, ok := pl.(*m3u8.MediaPlaylist)
+	if !ok {
+		return nil, errors.New("无效的媒体播放列表格式")
+	}
+
+	// 检查是否有 MAP 标签
+	if mediaPlaylist.Map != nil && mediaPlaylist.Map.URI != "" {
+		initURL, err := buildSegmentURL(p.RootURL, mediaPlaylist.Map.URI)
+		if err != nil {
+			return nil, fmt.Errorf("构建 init URL 失败：%w", err)
+		}
+
+		return internal.NewReq().GetBytes(ctx, initURL)
+	}
+
+	return nil, errors.New("未找到 init segment")
 }

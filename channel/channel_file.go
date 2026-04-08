@@ -2,7 +2,6 @@ package channel
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"html/template"
 	"os"
@@ -35,41 +34,36 @@ func (ch *Channel) NextFile() error {
 		return err
 	}
 
-	// Increment the sequence number for the next file
 	ch.Sequence++
 	return nil
 }
 
 // Cleanup cleans the file and resets it, called when the stream errors out or before next file was created.
 func (ch *Channel) Cleanup() error {
-	if ch.File == nil {
+	if ch.File == "" {
 		return nil
 	}
-	filename := ch.File.Name()
+	filename := ch.File
 
 	defer func() {
 		ch.Filesize = 0
 		ch.Duration = 0
 	}()
 
-	// Sync the file to ensure data is written to disk
-	if err := ch.File.Sync(); err != nil && !errors.Is(err, os.ErrClosed) {
-		return fmt.Errorf("同步文件: %w", err)
-	}
-	if err := ch.File.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
-		return fmt.Errorf("关闭文件: %w", err)
-	}
-
-	// Delete the empty file
+	// 获取文件信息
 	fileInfo, err := os.Stat(filename)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("开始删除零字节文件: %w", err)
+		return fmt.Errorf("获取文件信息：%w", err)
 	}
+
+	// 如果是零字节文件，删除它
 	if fileInfo != nil && fileInfo.Size() == 0 {
 		if err := os.Remove(filename); err != nil {
-			return fmt.Errorf("删除零字节文件: %w", err)
+			return fmt.Errorf("删除零字节文件：%w", err)
 		}
+		return nil
 	}
+
 	return nil
 }
 
@@ -99,6 +93,7 @@ func (ch *Channel) GenerateFilename() (string, error) {
 	if err := tpl.Execute(&buf, pattern); err != nil {
 		return "", fmt.Errorf("template execution error: %w", err)
 	}
+	//打印文件名
 	return buf.String(), nil
 }
 
@@ -110,13 +105,19 @@ func (ch *Channel) CreateNewFile(filename string) error {
 		return fmt.Errorf("mkdir all: %w", err)
 	}
 
-	// Open the file in append mode, create it if it doesn't exist
-	file, err := os.OpenFile(filename+".ts", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
+	// Open the file in write mode, create it if it doesn't exist
+	file, err := os.OpenFile(filename+".mp4", os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
-		return fmt.Errorf("无法打开文件: %s: %w", filename, err)
+		return fmt.Errorf("无法打开文件：%s: %w", filename, err)
 	}
 
-	ch.File = file
+	ch.File = file.Name()
+	err = file.Close()
+	if err != nil {
+		return err
+	}
+	file = nil
+
 	return nil
 }
 
