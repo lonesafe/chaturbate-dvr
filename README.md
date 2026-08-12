@@ -26,6 +26,19 @@
 
 ## 快速开始
 
+### 下载自动构建版本
+
+每次提交进入 `main` 后，GitHub Actions 会先执行前端构建、Go 格式检查、`go vet` 和全量测试，再并行编译多平台二进制。全部任务成功后，会在 [Releases](https://github.com/lonesafe/chaturbate-dvr/releases) 中创建一个带提交号的预发布版本。
+
+自动构建包含：
+
+- Linux：x86、x86_64、ARMv7、ARM64；
+- macOS：x86_64、ARM64；
+- Windows：x86、x86_64、ARM64；
+- `SHA256SUMS.txt`：全部二进制的 SHA-256 校验值。
+
+请选择与操作系统和 CPU 架构对应的文件。macOS 下载后如没有执行权限，可运行 `chmod +x chaturbate-dvr-macos-*`；Linux 同理。
+
 ### Docker Compose
 
 仓库自带的 [`docker-compose.yml`](docker-compose.yml) 会将录像和配置分别保存到当前目录下的 `videos` 与 `conf`：
@@ -333,7 +346,7 @@ GOOS=windows GOARCH=amd64 go build ./...
 GOOS=linux GOARCH=arm64 go build ./...
 ```
 
-更多构建命令见 [`README_DEV.md`](README_DEV.md)。推送 `v*` 标签会触发 GitHub Actions，构建 Windows、macOS 和 Linux 的 x64/arm64 二进制并创建 Release。
+更多构建命令见 [`README_DEV.md`](README_DEV.md)。Pull Request 会执行相同的验证和多平台编译，但不会发布；每次提交进入 `main` 后才会自动创建预发布 Release。
 
 ## 项目来源与许可
 
