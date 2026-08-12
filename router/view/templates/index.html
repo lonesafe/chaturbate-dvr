@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/static/styles/app.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+        <script src="/static/scripts/htmx.min.js" crossorigin="anonymous"></script>
+        <script src="/static/scripts/sse.min.js" crossorigin="anonymous"></script>
+        <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+        <link rel="manifest" href="/static/site.webmanifest">
+        <title>Chaturbate DVR</title>
+        <script>
+            // 页面绘制前应用深色模式，避免闪烁。
+            (function() {
+                if (localStorage.getItem('darkMode') === 'true' ||
+                    (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
+        </script>
+    </head>
+
+    <body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 h-dvh font-sans overflow-hidden" hx-ext="sse">
+        <div class="flex h-dvh">
+
+            <!-- Sidebar -->
+            <aside id="sidebar" class="w-[260px] max-md:w-full bg-white dark:bg-zinc-800 border-r border-zinc-200 dark:border-zinc-700 max-md:border-r-0 flex flex-col shrink-0">
+
+                <!-- Sidebar Header -->
+                <div class="p-5 pb-4 border-b border-zinc-100 dark:border-zinc-700">
+                    <h1 class="text-lg font-black uppercase tracking-tight">Chaturbate DVR</h1>
+                    <div class="text-[10px] text-zinc-400 uppercase mt-1" id="recording-counter"></div>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="document.getElementById('settings-dialog').showModal()"
+                                class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium border border-zinc-200 dark:border-zinc-600 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+                            </svg>
+                            设置
+                        </button>
+                        <button onclick="document.getElementById('create-dialog').showModal()"
+                                class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-300 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M12 5v14m-7-7h14"/>
+                            </svg>
+                            添加
+                        </button>
+                    </div>
+                </div>
+                <!-- / Sidebar Header -->
+
+                <!-- Channel List -->
+                <div class="flex-1 overflow-y-auto p-2">
+                    {{ range .Channels }}
+                    <button type="button"
+                            class="channel-item w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-500 mb-0.5"
+                            data-username="{{ .Username }}"
+                            data-priority="{{ if and .IsOnline (not .IsPaused) }}0{{ else if .IsPaused }}{{ if .IsOnline }}2{{ else }}3{{ end }}{{ else }}1{{ end }}"
+                            aria-current="false"
+                            onclick="selectChannel('{{ .Username }}')">
+                        <span class="w-2 h-2 rounded-full shrink-0 {{ if and .IsOnline (not .IsPaused) }}bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.4)]{{ else if .IsPaused }}bg-red-500{{ else }}bg-zinc-300{{ end }}"
+                              data-status-dot="{{ .Username }}"></span>
+                        <span class="text-sm font-semibold flex-1 truncate">{{ .Username }}</span>
+                        <span class="text-[10px] text-zinc-400 uppercase" data-status-text="{{ .Username }}">{{ if and .IsOnline (not .IsPaused) }}录制中{{ else if eq .RoomStatus "private" }}私密{{ else if eq .RoomStatus "group" }}群组{{ else if eq .RoomStatus "away" }}暂离{{ else if eq .RoomStatus "offline" }}离线{{ end }}</span>
+                    </button>
+                    {{ end }}
+                    {{ if not .Channels }}
+                    <div class="flex-1 flex items-center justify-center text-sm text-zinc-400 py-8">尚未添加频道</div>
+                    {{ end }}
+                </div>
+                <!-- / Channel List -->
+
+                <!-- Sidebar Footer -->
+                <div class="px-4 py-3 border-t border-zinc-100 dark:border-zinc-700 flex items-center justify-between">
+                    <span class="text-[10px] text-zinc-400 uppercase">版本 {{ .Config.Version }}</span>
+                    <button onclick="toggleDarkMode()" class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" title="切换深色模式">
+                        <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                        <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                    </button>
+                </div>
+                <!-- / Sidebar Footer -->
+
+            </aside>
+            <!-- / Sidebar -->
+
+            <!-- Main Content -->
+            <main id="main-content" class="flex-1 flex flex-col overflow-hidden max-md:hidden max-md:w-full" {{ if .Channels }}sse-connect="/updates?stream=updates"{{ end }}>
+
+                {{ if not .Channels }}
+                <!-- Blankslate -->
+                <div class="flex-1 flex flex-col items-center justify-center text-zinc-400">
+                    <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/>
+                    </svg>
+                    <h2 class="text-lg font-semibold text-zinc-600 dark:text-zinc-300 mb-1">当前没有正在录制的频道</h2>
+                    <p class="text-sm text-zinc-400 mb-4">添加 Chaturbate 频道后即可开始自动录制。</p>
+                    <button onclick="document.getElementById('create-dialog').showModal()"
+                            class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-300 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 5v14m-7-7h14"/>
+                        </svg>
+                        添加频道
+                    </button>
+                </div>
+                <!-- / Blankslate -->
+                {{ else }}
+
+                <!-- No-selection state -->
+                <div id="no-selection" class="flex-1 flex flex-col items-center justify-center text-zinc-400">
+                    <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"/>
+                    </svg>
+                    <p class="text-sm">请选择频道</p>
+                </div>
+                <!-- / No-selection state -->
+
+                <!-- Channel detail panels -->
+                {{ range .Channels }}
+                <div class="channel-detail hidden flex-1 flex flex-col overflow-hidden" data-channel="{{ .Username }}">
+                    <div class="flex-1 flex overflow-hidden">
+                        <!-- Info panel -->
+                        <div sse-swap="{{ .Username }}-info" class="w-[300px] max-md:w-full p-5 border-r border-zinc-200 dark:border-zinc-700 max-md:border-r-0 bg-white dark:bg-zinc-800 overflow-y-auto" style="line-height: 1.45">
+                            {{ template "channel_info" . }}
+                        </div>
+                        <!-- Log panel (hidden on mobile; logs are unreadable on small screens) -->
+                        <div class="flex-1 max-md:hidden flex flex-col p-5 bg-zinc-50 dark:bg-zinc-900">
+                            <textarea class="flex-1 min-h-0 w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3 font-mono text-xs text-zinc-500 dark:text-zinc-400 resize-none focus:outline-none"
+                                      readonly sse-swap="{{ .Username }}-log">{{ range .Logs }}{{ . }}&NewLine;{{ end }}</textarea>
+                            <label class="inline-flex items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500 cursor-pointer select-none mt-2">
+                                <input type="checkbox" checked class="accent-zinc-900 dark:accent-zinc-100" />
+                                自动更新并滚动日志
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {{ end }}
+                <!-- / Channel detail panels -->
+
+                {{ end }}
+            </main>
+            <!-- / Main Content -->
+
+        </div>
+
+        <!-- Settings Dialog -->
+        <dialog id="settings-dialog" class="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-xl w-full max-w-[560px] p-0">
+            <form action="/update_config" method="POST" style="max-height: 90dvh; overflow-y: auto">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-700">
+                    <h2 class="text-base font-semibold">设置</h2>
+                    <button type="button" onclick="this.closest('dialog').close()"
+                            class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="px-6 py-5 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1.5">录制分辨率</label>
+                        <select name="resolution" class="w-full border border-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 rounded-lg px-3 py-2 text-sm">
+                            <option value="2160" {{ if eq .Config.Resolution 2160 }}selected{{ end }}>4K</option><option value="1440" {{ if eq .Config.Resolution 1440 }}selected{{ end }}>2K</option><option value="1080" {{ if eq .Config.Resolution 1080 }}selected{{ end }}>1080p</option><option value="720" {{ if eq .Config.Resolution 720 }}selected{{ end }}>720p</option><option value="540" {{ if eq .Config.Resolution 540 }}selected{{ end }}>540p</option><option value="480" {{ if eq .Config.Resolution 480 }}selected{{ end }}>480p</option><option value="240" {{ if eq .Config.Resolution 240 }}selected{{ end }}>240p</option>
+                        </select>
+                        <p class="text-xs text-zinc-400 mt-1">所选分辨率不可用时会自动选择较低分辨率。</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-2">帧率</label>
+                        <div class="flex gap-3"><label class="flex items-center gap-2 text-sm"><input type="radio" name="framerate" value="60" {{ if eq .Config.Framerate 60 }}checked{{ end }}>60 FPS（或更低）</label><label class="flex items-center gap-2 text-sm"><input type="radio" name="framerate" value="30" {{ if eq .Config.Framerate 30 }}checked{{ end }}>30 FPS</label></div>
+                    </div>
+                    <div><label class="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1.5">文件名格式</label><input type="text" name="pattern" required value="{{ .Config.Pattern }}" class="w-full border border-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 rounded-lg px-3 py-2 text-sm"><p class="text-xs text-zinc-400 mt-1">推荐使用相对路径；已有绝对路径只能保留在当前录制根目录内。不能包含 <code>..</code>。</p></div>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-2">文件分段</label>
+                        <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs mb-1">最大文件大小</label><div class="flex"><input type="number" min="0" name="max_filesize" value="{{ .Config.MaxFilesize }}" class="flex-1 min-w-0 border border-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 rounded-l-lg px-3 py-2 text-sm"><span class="inline-flex items-center px-3 border border-zinc-200 dark:border-zinc-600 rounded-r-lg">MB</span></div></div><div><label class="block text-xs mb-1">最长时长</label><div class="flex"><input type="number" min="0" name="max_duration" value="{{ .Config.MaxDuration }}" class="flex-1 min-w-0 border border-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 rounded-l-lg px-3 py-2 text-sm"><span class="inline-flex items-center px-3 border border-zinc-200 dark:border-zinc-600 rounded-r-lg">分钟</span></div></div></div>
+                        <p class="text-xs text-zinc-400 mt-1">两项均为 0 时不分段。</p>
+                    </div>
+                    <div><label class="flex items-center gap-2 text-sm"><input type="checkbox" name="compress" value="true" {{ if .Config.Compress }}checked{{ end }}>录制完成后压缩为 MKV（需要 ffmpeg）</label></div>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1.5">音视频配对容差</label>
+                        <div class="flex">
+                            <input type="number" min="1" max="5000" step="1" name="pair_tolerance_ms" required value="{{ .Config.PairToleranceMS }}" class="flex-1 min-w-0 border border-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 rounded-l-lg px-3 py-2 text-sm">
+                            <span class="inline-flex items-center px-3 border border-zinc-200 dark:border-zinc-600 rounded-r-lg">毫秒</span>
+                        </div>
+                        <p class="text-xs text-zinc-400 mt-1">用于容忍 LL-HLS 音视频时间轴偏移，建议保持 1000。设置过低可能出现“录制中”但文件不增长。</p>
+                    </div>
+                    <div class="h-px bg-zinc-100 dark:bg-zinc-600"></div>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1.5">Cookies（浏览器凭据）</label>
+                        <textarea name="cookies" rows="4" class="w-full bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg px-3 py-2 text-sm dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:border-transparent resize-none">{{ .Config.Cookies }}</textarea>
+                        <p class="text-xs text-zinc-400 mt-1">多个 Cookie 请使用分号分隔。请填写你在浏览器正常验证后获得的 Cookie，详情参阅 <a class="text-blue-600 hover:text-blue-500 underline" href="https://github.com/teacat/chaturbate-dvr/?tab=readme-ov-file#-cookies--user-agent" target="_blank">README</a>。</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1.5">User-Agent（浏览器标识）</label>
+                        <textarea name="user_agent" rows="4" class="w-full bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg px-3 py-2 text-sm dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:border-transparent resize-none">{{ .Config.UserAgent }}</textarea>
+                        <p class="text-xs text-zinc-400 mt-1">User-Agent 必须与获取 Cookie 时使用的浏览器一致，可通过 <a class="text-blue-600 hover:text-blue-500 underline" href="https://www.whatismybrowser.com/detect/what-is-my-user-agent/" target="_blank">WhatIsMyBrowser</a> 查看。</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 px-6 py-3 bg-amber-50 dark:bg-amber-900/20 border-t border-zinc-100 dark:border-zinc-700 text-xs text-amber-700 dark:text-amber-400">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01"/></svg>
+                    设置会持久保存；音视频配对容差从下一次播放列表轮询开始生效，其他录制参数从下一次录制会话开始生效。
+                </div>
+                <div class="flex justify-end gap-2 px-6 py-4 border-t border-zinc-100 dark:border-zinc-700">
+                    <button type="button" onclick="this.closest('dialog').close()" class="px-4 py-2 text-sm font-medium border border-zinc-200 dark:border-zinc-600 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">取消</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-300 transition-colors">保存设置</button>
+                </div>
+            </form>
+        </dialog>
+        <!-- / Settings Dialog -->
+
+        <!-- Create Dialog -->
+        <dialog id="create-dialog" class="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-xl w-full max-w-[560px] p-0">
+            <form id="create-channel-form" action="/create_channel" method="POST">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-700">
+                    <h2 class="text-base font-semibold">添加频道</h2>
+                    <button type="button" onclick="this.closest('dialog').close()"
+                            class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="px-6 py-5 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1.5">频道用户名</label>
+                        <div class="flex">
+                            <span class="inline-flex items-center px-3 text-sm text-zinc-400 bg-zinc-50 dark:bg-zinc-700 border border-r-0 border-zinc-200 dark:border-zinc-600 rounded-l-lg">{{ .Config.Domain }}</span>
+                            <textarea name="username" rows="5" autofocus required placeholder="例如：&#10;channel_one&#10;channel_two" class="flex-1 border border-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 rounded-r-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:border-transparent resize-none"></textarea>
+                        </div>
+                        <p class="text-xs text-zinc-400 mt-1">支持每行一个，也可以使用中英文逗号或分号分隔。</p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 px-6 py-4 border-t border-zinc-100 dark:border-zinc-700">
+                    <button type="button" onclick="this.closest('dialog').close()" class="px-4 py-2 text-sm font-medium border border-zinc-200 dark:border-zinc-600 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">取消</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-300 transition-colors">添加频道</button>
+                </div>
+            </form>
+        </dialog>
+        <!-- / Create Dialog -->
+
+        <script>
+            // 移动端列表和详情仅显示其中一个。
+            // Entering detail pushes a history entry so the browser back button returns to the list.
+            function isMobile() {
+                return window.matchMedia('(max-width: 767px)').matches;
+            }
+            function setMobileView(view) { // 'list' | 'detail'
+                document.getElementById('sidebar').classList.toggle('max-md:hidden', view === 'detail');
+                document.getElementById('main-content').classList.toggle('max-md:hidden', view === 'list');
+            }
+            // Sync classes even on desktop — max-md:hidden is inert there, but skipping the sync
+            // lets DOM and history diverge after a viewport resize.
+            window.addEventListener('popstate', function(e) {
+                setMobileView(e.state && e.state.mobileView === 'detail' ? 'detail' : 'list');
+            });
+
+            // === Channel selection ===
+            function selectChannel(username, skipMobileFlip) {
+                document.querySelectorAll('.channel-detail').forEach(function(el) { el.classList.add('hidden'); });
+                var noSel = document.getElementById('no-selection');
+                if (noSel) noSel.classList.add('hidden');
+
+                var panel = document.querySelector('[data-channel="' + username + '"]');
+                if (panel) panel.classList.remove('hidden');
+
+                document.querySelectorAll('.channel-item').forEach(function(el) {
+                    var isSelected = el.dataset.username === username;
+                    el.classList.toggle('selected', isSelected);
+                    el.setAttribute('aria-current', isSelected ? 'true' : 'false');
+                });
+
+                sessionStorage.setItem('selectedChannel', username);
+
+                if (!skipMobileFlip && isMobile()) {
+                    setMobileView('detail');
+                    history.pushState({ mobileView: 'detail' }, '');
+                }
+            }
+
+            // === Recording counter ===
+            function updateRecordingCount() {
+                var count = document.querySelectorAll('[data-status="recording"]').length;
+                var el = document.getElementById('recording-counter');
+                if (count > 0) {
+                    el.textContent = count + ' 个频道正在录制';
+                } else {
+                    el.textContent = '当前无录制';
+                }
+            }
+
+            // === Sidebar order (mirrors manager.ChannelInfo sort) ===
+            function channelPriority(status, isOnline) {
+                if (status === 'recording') return 0;
+                if (status === 'paused') return isOnline ? 2 : 3;
+                return 1;
+            }
+
+            function resortChannels() {
+                var items = Array.from(document.querySelectorAll('.channel-item'));
+                if (!items.length) return;
+                var container = items[0].parentNode;
+                items.sort(function(a, b) {
+                    var pa = parseInt(a.dataset.priority || '1', 10);
+                    var pb = parseInt(b.dataset.priority || '1', 10);
+                    if (pa !== pb) return pa - pb;
+                    return a.dataset.username.toLowerCase().localeCompare(b.dataset.username.toLowerCase());
+                });
+                items.forEach(function(el) { container.appendChild(el); });
+            }
+
+            // === Sidebar dot sync ===
+            function updateSidebarDot(username, status, isOnline, roomStatus) {
+                var dot = document.querySelector('[data-status-dot="' + username + '"]');
+                if (!dot) return;
+                dot.className = 'w-2 h-2 rounded-full shrink-0';
+                if (status === 'recording') {
+                    dot.classList.add('bg-green-500', 'shadow-[0_0_6px_rgba(34,197,94,0.4)]');
+                } else if (status === 'paused') {
+                    dot.classList.add('bg-red-500');
+                } else {
+                    dot.classList.add('bg-zinc-300');
+                }
+                var textEl = document.querySelector('[data-status-text="' + username + '"]');
+                if (textEl) {
+                    if (status === 'recording') {
+                        textEl.textContent = '录制中';
+                    } else {
+                        textEl.textContent = translateRoomStatus(roomStatus);
+                    }
+                }
+            }
+
+            function translateRoomStatus(status) {
+                return ({public: '公开', private: '私密', group: '群组', away: '暂离', offline: '离线', hidden: '隐藏'})[status] || status || '';
+            }
+
+            document.getElementById('create-channel-form').addEventListener('submit', async function(event) {
+                event.preventDefault();
+                var form = event.currentTarget;
+                var submit = form.querySelector('[type="submit"]');
+                submit.disabled = true;
+                try {
+                    var response = await fetch(form.action, {method: 'POST', body: new FormData(form)});
+                    if (!response.ok) {
+                        alert((await response.text()) || '添加频道失败');
+                        return;
+                    }
+                    var result = await response.json();
+                    var lines = ['成功添加 ' + result.created.length + ' 个频道'];
+                    if (result.created.length) lines.push('已添加：' + result.created.join('、'));
+                    if (result.skipped.length) lines.push('已跳过（已添加或输入重复）：' + result.skipped.join('、'));
+                    alert(lines.join('\n'));
+                    window.location.reload();
+                } catch (error) {
+                    alert('添加频道失败：' + error.message);
+                } finally {
+                    submit.disabled = false;
+                }
+            });
+
+            // === SSE event handlers ===
+            document.body.addEventListener("htmx:sseBeforeMessage", function(e) {
+                var sseId = e.detail.elt.getAttribute('sse-swap');
+                if (sseId && sseId.endsWith("-log")) {
+                    var panel = e.detail.elt.closest("[data-channel]");
+                    if (!panel || !panel.querySelector("[type=checkbox]").checked) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                setTimeout(function() {
+                    var panel = e.detail.elt.closest("[data-channel]");
+                    if (panel) {
+                        var textarea = panel.querySelector("textarea");
+                        if (textarea) textarea.scrollTop = textarea.scrollHeight;
+                    }
+                }, 0);
+            });
+
+            document.body.addEventListener("htmx:sseMessage", function(e) {
+                var sseId = e.detail.elt.getAttribute('sse-swap');
+                if (sseId && sseId.endsWith("-info")) {
+                    var username = sseId.replace("-info", "");
+                    var statusEl = e.detail.elt.querySelector("[data-status]");
+                    if (statusEl) {
+                        var status = statusEl.dataset.status;
+                        var isOnline = statusEl.dataset.online === 'true';
+                        updateSidebarDot(username, status, isOnline, statusEl.dataset.roomStatus || '');
+                        var item = document.querySelector('.channel-item[data-username="' + username + '"]');
+                        if (item) {
+                            var newPriority = String(channelPriority(status, isOnline));
+                            if (item.dataset.priority !== newPriority) {
+                                item.dataset.priority = newPriority;
+                                resortChannels();
+                            }
+                        }
+                    }
+                    updateRecordingCount();
+                }
+            });
+
+            // === Dark mode ===
+            function toggleDarkMode() {
+                var isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+            }
+
+            // === Init on page load ===
+            document.addEventListener("DOMContentLoaded", function() {
+                updateRecordingCount();
+
+                // First load always lands on the channel list — skip the mobile flip into detail view.
+                var saved = sessionStorage.getItem('selectedChannel');
+                if (saved && document.querySelector('[data-channel="' + saved + '"]')) {
+                    selectChannel(saved, true);
+                } else {
+                    sessionStorage.removeItem('selectedChannel');
+                    var first = document.querySelector('.channel-item');
+                    if (first) selectChannel(first.dataset.username, true);
+                }
+
+                document.querySelectorAll("textarea").forEach(function(ta) {
+                    ta.scrollTop = ta.scrollHeight;
+                });
+            });
+        </script>
+    </body>
+</html>
