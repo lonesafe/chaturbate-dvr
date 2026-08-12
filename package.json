@@ -6,6 +6,6 @@
     "dev:css": "tailwindcss -i ./router/view/templates/styles/input.css -o ./router/view/templates/styles/app.css --watch"
   },
   "devDependencies": {
-    "tailwindcss": "^3.4"
+    "tailwindcss": "^4.3"
   }
 }
