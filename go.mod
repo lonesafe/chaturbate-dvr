@@ -1,6 +1,6 @@
 module github.com/teacat/chaturbate-dvr
 
-go 1.23.0
+go 1.25.0
 
 require (
 	github.com/Eyevinn/mp4ff v0.51.0
@@ -10,6 +10,7 @@ require (
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/samber/lo v1.49.1
 	github.com/urfave/cli/v2 v2.27.6
+	golang.org/x/sys v0.45.0
 )
 
 require (
@@ -36,10 +37,9 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
