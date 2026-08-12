@@ -6,7 +6,7 @@ COPY tailwind.config.js ./
 COPY router/view/templates/ router/view/templates/
 RUN npm run build:css
 
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 WORKDIR /workspace
 COPY ./ ./
 COPY --from=css-builder /workspace/router/view/templates/styles/app.css router/view/templates/styles/app.css

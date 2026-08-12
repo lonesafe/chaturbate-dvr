@@ -63,7 +63,7 @@ Docker 镜像已经包含 CA 证书、时区数据和 FFmpeg。
 
 ### 本地运行
 
-需要 Go 1.23 或更高版本。强烈建议同时安装 `ffmpeg` 和 `ffprobe`；没有 FFmpeg 时录像仍会保留，但完成后的 MP4 无法进行 fast-start 优化，首次载入可能较慢，压缩功能也不可用。
+需要 Go 1.25 或更高版本。强烈建议同时安装 `ffmpeg` 和 `ffprobe`；没有 FFmpeg 时录像仍会保留，但完成后的 MP4 无法进行 fast-start 优化，首次载入可能较慢，压缩功能也不可用。
 
 ```bash
 go build -o chaturbate-dvr .
