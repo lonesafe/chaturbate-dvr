@@ -161,7 +161,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: build-${{ github.run_number }}-${{ needs.verify.outputs.short_sha }}
-          name: 自动构建 #${{ github.run_number }} · ${{ needs.verify.outputs.short_sha }}
+          name: "自动构建 #${{ github.run_number }} · ${{ needs.verify.outputs.short_sha }}"
           target_commitish: ${{ github.sha }}
           prerelease: true
           generate_release_notes: true
