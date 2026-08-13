@@ -28,7 +28,7 @@
 
 ### 下载自动构建版本
 
-每次提交进入 `main` 后，GitHub Actions 会先执行前端构建、Go 格式检查、`go vet` 和全量测试，再并行编译多平台二进制。全部任务成功后，会在 [Releases](https://github.com/lonesafe/chaturbate-dvr/releases) 中创建一个带提交号的预发布版本。
+每次提交进入 `main` 后，GitHub Actions 会先执行前端构建、Go 格式检查、`go vet` 和全量测试，再并行编译多平台二进制。全部任务成功后，会在 [Releases](https://github.com/lonesafe/chaturbate-dvr/releases) 中创建一个带提交号的正式版本，并将其标记为仓库的 Latest Release。
 
 自动构建包含：
 
@@ -346,7 +346,7 @@ GOOS=windows GOARCH=amd64 go build ./...
 GOOS=linux GOARCH=arm64 go build ./...
 ```
 
-更多构建命令见 [`README_DEV.md`](README_DEV.md)。Pull Request 会执行相同的验证和多平台编译，但不会发布；每次提交进入 `main` 后才会自动创建预发布 Release。
+更多构建命令见 [`README_DEV.md`](README_DEV.md)。Pull Request 会执行相同的验证和多平台编译，但不会发布；每次提交进入 `main` 后才会自动创建正式 Release，并更新仓库首页显示的 Latest 版本。
 
 ## 项目来源与许可
 
